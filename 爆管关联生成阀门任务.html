@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>生成爆管应急关阀工单</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Microsoft YaHei", sans-serif;
+        }
+
+        /* 全局背景（参考图2深色科技风） */
+        body {
+            background-color: #0a1428;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        /* 弹窗容器 */
+        .modal-container {
+            background-color: #0f1a30;
+            border-radius: 8px;
+            width: 100%;
+            max-width: 800px;
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        /* 标题栏（参考图2顶部栏样式） */
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px 24px;
+            border-bottom: 1px solid #1a2a4a;
+            background-color: #142340;
+        }
+
+        .modal-title {
+            font-size: 28px;
+            font-weight: bold;
+            color: #ffffff;
+        }
+
+        .close-btn {
+            font-size: 28px;
+            color: #8899aa;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+
+        .close-btn:hover {
+            color: #ffffff;
+        }
+
+        /* 紧急提示条（保留图1红色警示，适配图2深色风格） */
+        .alert-bar {
+            margin: 24px;
+            padding: 16px;
+            border: 1px solid #ff4d4f;
+            border-radius: 4px;
+            background-color: rgba(255, 77, 79, 0.1);
+            color: #ff4d4f;
+            font-size: 18px;
+            line-height: 1.5;
+        }
+
+        /* 信息展示组 */
+        .info-group {
+            padding: 0 24px 16px;
+        }
+
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 0;
+            border-bottom: 1px solid #1a2a4a;
+        }
+
+        .info-item:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            font-size: 20px;
+            color: #ffffff;
+            font-weight: 500;
+        }
+
+        /* 高亮值（参考图2蓝色主题色） */
+        .info-value {
+            font-size: 20px;
+            color: #409eff;
+            font-weight: 500;
+        }
+
+        /* 下拉选择框（参考图2输入框样式） */
+        .form-item {
+            padding: 0 24px 24px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 20px;
+            color: #ffffff;
+            font-weight: 500;
+            margin-bottom: 12px;
+        }
+
+        .select-box {
+            width: 100%;
+            padding: 14px 16px;
+            background-color: #334155;
+            border: 1px solid #4a5568;
+            border-radius: 4px;
+            color: #ffffff;
+            font-size: 20px;
+            appearance: none;
+            -webkit-appearance: none;
+            /* 蓝色下拉箭头（参考图2主题色） */
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%23409eff' viewBox='0 0 24 24'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 16px center;
+            background-size: 24px;
+            cursor: pointer;
+            transition: border-color 0.3s;
+        }
+
+        .select-box:hover {
+            border-color: #409eff;
+        }
+
+        .select-box:focus {
+            outline: none;
+            border-color: #409eff;
+            box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.2);
+        }
+
+        /* 底部按钮栏（参考图2按钮样式） */
+        .btn-group {
+            display: flex;
+            justify-content: flex-end;
+            gap: 16px;
+            padding: 24px;
+            border-top: 1px solid #1a2a4a;
+            background-color: #142340;
+        }
+
+        .btn {
+            padding: 12px 32px;
+            border: none;
+            border-radius: 4px;
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        /* 取消按钮（参考图2未选中按钮深灰样式） */
+        .btn-cancel {
+            background-color: #4a5568;
+            color: #ffffff;
+        }
+
+        .btn-cancel:hover {
+            background-color: #5a6778;
+        }
+
+        /* 确认按钮（保留图1红色紧急属性，适配图2风格） */
+        .btn-confirm {
+            background-color: #f5222d;
+            color: #ffffff;
+        }
+
+        .btn-confirm:hover {
+            background-color: #ff4d4f;
+        }
+    </style>
+</head>
+<body>
+    <div class="modal-container">
+        <!-- 标题栏 -->
+        <div class="modal-header">
+            <h2 class="modal-title">生成爆管应急关阀工单</h2>
+            <span class="close-btn">×</span>
+        </div>
+
+        <!-- 紧急提示条 -->
+        <div class="alert-bar">
+            该工单为爆管应急生成，优先级为紧急，审核通过后立即推送至现场APP
+        </div>
+
+        <!-- 工单信息组 -->
+        <div class="info-group">
+            <div class="info-item">
+                <span class="info-label">关联爆管编号</span>
+                <span class="info-value">BG20260415001</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">工单编号</span>
+                <span class="info-value">GD20260415001</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">关阀数量</span>
+                <span class="info-value">8个</span>
+            </div>
+        </div>
+
+        <!-- 指派执行人下拉框 -->
+        <div class="form-item">
+            <label class="form-label">指派执行人</label>
+            <select class="select-box">
+                <option>李师傅</option>
+                <option>王师傅</option>
+                <option>赵巡检</option>
+            </select>
+        </div>
+
+        <!-- 操作按钮 -->
+        <div class="btn-group">
+            <button class="btn btn-cancel">取消</button>
+            <button class="btn btn-confirm">确认生成工单</button>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>阀门详情侧边栏演示</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#165DFF',
+                        emergency: '#F53F3F',
+                        success: '#00B42A',
+                        warning: '#FF7D00',
+                        dark: '#0F172A',
+                        'dark-2': '#1E293B',
+                        'dark-3': '#334155',
+                        'dark-4': '#475569',
+                        'text-light': '#E2E8F0',
+                        'text-lighter': '#94A3B8'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'PingFang SC', 'Helvetica Neue', 'Arial', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .scrollbar-thin::-webkit-scrollbar {
+                width: 6px;
+            }
+            .scrollbar-thin::-webkit-scrollbar-track {
+                background: #1E293B;
+            }
+            .scrollbar-thin::-webkit-scrollbar-thumb {
+                background: #475569;
+                border-radius: 3px;
+            }
+        }
+    </style>
+</head>
+<body class="bg-dark text-text-light font-sans overflow-hidden">
+    <!-- 顶部导航栏 -->
+    <header class="h-12 bg-dark-2 border-b border-dark-3 flex items-center justify-between px-4">
+        <div class="flex items-center">
+            <h1 class="text-lg font-medium mr-8">在线水力模型系统</h1>
+            <nav class="flex space-x-1">
+                <button class="px-4 py-2 bg-primary rounded text-sm">阀门管理</button>
+                <button class="px-4 py-2 hover:bg-dark-3 rounded text-sm">爆管处置</button>
+            </nav>
+        </div>
+        <span class="text-text-lighter text-sm">当前用户：张调度</span>
+    </header>
+
+    <!-- 主内容区 -->
+    <div class="flex h-[calc(100vh-48px)]">
+        <!-- 左侧阀门列表（简化） -->
+        <aside class="w-72 bg-dark-2 border-r border-dark-3 flex flex-col">
+            <div class="p-3 border-b border-dark-3">
+                <input type="text" placeholder="搜索ID、口径、道路、区域" class="w-full bg-dark-3 border border-dark-4 rounded px-3 py-2 text-sm">
+            </div>
+            <div class="flex-1 p-3">
+                <p class="text-text-lighter text-sm">点击地图上的阀门查看详情</p>
+            </div>
+        </aside>
+
+        <!-- 中间地图 -->
+        <main class="flex-1 relative">
+            <img src="https://picsum.photos/1920/1080?random=20" alt="管网地图" class="w-full h-full object-cover">
+            <!-- 模拟点击的阀门 -->
+            <div class="absolute top-1/2 left-1/3 bg-primary text-white px-2 py-1 rounded text-sm cursor-pointer" onclick="showValveDetail()">
+                DN400
+            </div>
+        </main>
+
+        <!-- 右侧阀门详情侧边栏（核心调整部分） -->
+        <aside id="valve-sidebar" class="w-96 bg-dark-2 sidebar-shadow flex flex-col">
+            <div class="h-12 border-b border-dark-3 flex items-center justify-between px-4">
+                <h2 class="font-medium">阀门详情</h2>
+                <button onclick="closeSidebar()" class="text-text-lighter hover:text-text-light">
+                    <i class="fa fa-times"></i>
+                </button>
+            </div>
+
+            <div class="flex-1 overflow-y-auto scrollbar-thin p-4 space-y-4">
+                <!-- 0. 照片部分 -->
+                <div class="bg-dark-3 rounded-lg p-4">
+                    <h3 class="font-medium mb-3">现场照片</h3>
+                    <div class="border-2 border-dashed border-dark-4 rounded-lg h-32 flex flex-col items-center justify-center text-text-lighter">
+                        <i class="fa fa-plus text-2xl mb-2"></i>
+                        <p class="text-sm">上传图片</p>
+                        <p class="text-xs mt-1">支持JPG、PNG格式，最大5MB</p>
+                    </div>
+                </div>
+
+                <!-- 1. 阀门信息 -->
+                <div class="bg-dark-3 rounded-lg p-4">
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="font-medium">阀门信息</h3>
+                        <button class="text-primary text-xs hover:underline">查看详细信息</button>
+                    </div>
+                    <div class="space-y-2 text-sm">
+                        <div class="flex justify-between items-center">
+                            <span class="text-text-lighter">ID</span>
+                            <div class="flex items-center">
+                                <span class="mr-2">00771120-7E09-4E41-B3E8-61C5A5165A1B</span>
+                                <button class="text-primary" onclick="copyId()">
+                                    <i class="fa fa-copy"></i>
+                                </button>
+                                <span class="ml-2 bg-blue-100 text-primary text-xs px-2 py-0.5 rounded">模型内</span>
+                            </div>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-text-lighter">省略样式</span>
+                            <span>00771120...5A1B</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-text-lighter">安装位置</span>
+                            <span>水厂及附近水厂水泵中间阀门</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-text-lighter">类型</span>
+                            <span>闸阀</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-text-lighter">口径</span>
+                            <span>DN400</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-text-lighter">启闭状态</span>
+                            <span class="text-success">关</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-text-lighter">设备状态</span>
+                            <span>正常</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-text-lighter">X、Y坐标</span>
+                            <span>590752.8, 3377272.3</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. 操作记录（默认近6个月） -->
+                <div class="bg-dark-3 rounded-lg p-4">
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="font-medium">操作记录</h3>
+                        <span class="text-text-lighter text-xs">默认展示近6个月数据</span>
+                    </div>
+                    <div class="space-y-3">
+                        <div class="border border-dark-4 rounded p-3">
+                            <div class="flex justify-between items-start mb-2">
+                                <div>
+                                    <p class="font-medium text-sm">任务ID：GD202604120005</p>
+                                    <p class="text-text-lighter text-xs">2026.04.12 13:15 · 关阀操作</p>
+                                    <p class="text-text-lighter text-xs">操作人：孙师傅</p>
+                                </div>
+                                <button class="text-primary text-xs hover:underline">详情</button>
+                            </div>
+                        </div>
+                        <div class="border border-dark-4 rounded p-3">
+                            <div class="flex justify-between items-start mb-2">
+                                <div>
+                                    <p class="font-medium text-sm">任务ID：GD202512060012</p>
+                                    <p class="text-text-lighter text-xs">2025.12.06 11:20 · 开阀操作</p>
+                                    <p class="text-text-lighter text-xs">操作人：王师傅</p>
+                                </div>
+                                <button class="text-primary text-xs hover:underline">详情</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. 备注（默认近6个月） -->
+                <div class="bg-dark-3 rounded-lg p-4">
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="font-medium">备注信息</h3>
+                        <span class="text-text-lighter text-xs">默认展示近6个月数据</span>
+                    </div>
+                    <div class="space-y-3">
+                        <div class="border border-dark-4 rounded p-3">
+                            <div class="flex justify-between items-start mb-2">
+                                <div>
+                                    <p class="text-sm">这里是备注信息这里是备注信息</p>
+                                    <p class="text-text-lighter text-xs mt-1">2026.01.20 14:30 · 记录人：赵巡检</p>
+                                </div>
+                                <button class="text-primary text-xs hover:underline">详情</button>
+                            </div>
+                        </div>
+                        <div class="border border-dark-4 rounded p-3">
+                            <div class="flex justify-between items-start mb-2">
+                                <div>
+                                    <p class="text-sm">这里是备注信息内哦让那个</p>
+                                    <p class="text-text-lighter text-xs mt-1">2025.12.31 11:30 · 记录人：王巡查</p>
+                                </div>
+                                <button class="text-primary text-xs hover:underline">详情</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4. 维修记录（默认近6个月） -->
+                <div class="bg-dark-3 rounded-lg p-4">
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="font-medium">维修记录</h3>
+                        <span class="text-text-lighter text-xs">默认展示近6个月数据</span>
+                    </div>
+                    <div class="space-y-3">
+                        <div class="border border-dark-4 rounded p-3">
+                            <div class="flex justify-between items-start mb-2">
+                                <div>
+                                    <p class="text-sm">更换螺栓，垫片</p>
+                                    <p class="text-text-lighter text-xs mt-1">2026.04.13 14:23 · 维修人：李师傅</p>
+                                </div>
+                                <button class="text-primary text-xs hover:underline">详情</button>
+                            </div>
+                        </div>
+                        <div class="border border-dark-4 rounded p-3">
+                            <div class="flex justify-between items-start mb-2">
+                                <div>
+                                    <p class="text-sm">维修内容记录</p>
+                                    <p class="text-text-lighter text-xs mt-1">2026.01.03 11:00 · 维修人：王师傅</p>
+                                </div>
+                                <button class="text-primary text-xs hover:underline">详情</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 底部操作按钮 -->
+            <div class="p-4 border-t border-dark-3">
+                <button onclick="showCreateTaskModal()" class="w-full bg-primary hover:bg-primary/90 py-2 rounded text-sm font-medium">
+                    创建操作任务
+                </button>
+            </div>
+        </aside>
+    </div>
+
+    <!-- 创建操作任务弹窗 -->
+    <div id="task-modal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center hidden">
+        <div class="bg-dark-2 rounded-lg w-[500px] overflow-hidden">
+            <div class="border-b border-dark-3 p-4 flex justify-between items-center">
+                <h3 class="font-medium">创建操作工单</h3>
+                <button onclick="closeModal()" class="text-text-lighter hover:text-text-light">×</button>
+            </div>
+            <div class="p-4 space-y-4 text-sm">
+                <div class="bg-dark-3 rounded p-3">
+                    <p class="text-text-lighter text-sm mb-2">操作阀门：</p>
+                    <p>00771120-7E09-4E41-B3E8-61C5A5165A1B (DN400, 模型内)</p>
+                </div>
+                <div>
+                    <label class="block text-text-lighter text-sm mb-2">操作类型</label>
+                    <div class="flex space-x-4">
+                        <label class="flex items-center">
+                            <input type="radio" name="type" value="close" checked class="mr-2">
+                            <span>关阀</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="radio" name="type" value="open" class="mr-2">
+                            <span>开阀</span>
+                        </label>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-text-lighter text-sm mb-2">指派执行人</label>
+                    <select class="w-full bg-dark-3 border border-dark-4 rounded px-3 py-2">
+                        <option>李师傅</option>
+                        <option>王师傅</option>
+                    </select>
+                </div>
+            </div>
+            <div class="border-t border-dark-3 p-4 flex justify-end space-x-3">
+                <button onclick="closeModal()" class="px-4 py-2 bg-dark-4 rounded text-sm">取消</button>
+                <button class="px-4 py-2 bg-primary rounded text-sm">提交审核</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 显示阀门详情
+        function showValveDetail() {
+            document.getElementById('valve-sidebar').classList.remove('translate-x-full');
+        }
+
+        // 关闭侧边栏
+        function closeSidebar() {
+            document.getElementById('valve-sidebar').classList.add('translate-x-full');
+        }
+
+        // 复制阀门ID
+        function copyId() {
+            navigator.clipboard.writeText('00771120-7E09-4E41-B3E8-61C5A5165A1B');
+            alert('阀门ID已复制到剪贴板');
+        }
+
+        // 显示创建任务弹窗
+        function showCreateTaskModal() {
+            document.getElementById('task-modal').classList.remove('hidden');
+        }
+
+        // 关闭弹窗
+        function closeModal() {
+            document.getElementById('task-modal').classList.add('hidden');
+        }
+
+        // 页面加载自动显示阀门详情
+        window.onload = function() {
+            showValveDetail();
+        };
+    </script>
+</body>
+</html>

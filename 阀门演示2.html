@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>爆管处置-阀门管理 联动系统</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#165DFF',
+                        emergency: '#F53F3F',
+                        success: '#00B42A',
+                        warning: '#FF7D00',
+                        dark: '#0F172A',
+                        'dark-2': '#1E293B',
+                        'dark-3': '#334155',
+                        'dark-4': '#475569',
+                        'text-light': '#E2E8F0',
+                        'text-lighter': '#94A3B8'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'PingFang SC', 'Helvetica Neue', 'Arial', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .tab-active {
+                @apply bg-primary text-white;
+            }
+            .sidebar-shadow {
+                box-shadow: -2px 0 10px rgba(0, 0, 0, 0.2);
+            }
+            .card-shadow {
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+            }
+            .scrollbar-thin::-webkit-scrollbar {
+                width: 6px;
+            }
+            .scrollbar-thin::-webkit-scrollbar-track {
+                background: #1E293B;
+            }
+            .scrollbar-thin::-webkit-scrollbar-thumb {
+                background: #475569;
+                border-radius: 3px;
+            }
+        }
+    </style>
+</head>
+<body class="bg-dark text-text-light font-sans overflow-hidden">
+    <!-- 全局紧急通知横幅 -->
+    <div id="global-notice" class="fixed top-0 left-0 right-0 bg-emergency text-white py-2 px-4 z-50 flex justify-between items-center hidden">
+        <div class="flex items-center">
+            <i class="fa fa-exclamation-triangle mr-2"></i>
+            <span>已生成爆管应急关阀工单：<span id="notice-task-id">GD20260415001</span>，点击立即查看</span>
+        </div>
+        <button onclick="jumpToTask()" class="bg-white/20 hover:bg-white/30 px-3 py-1 rounded text-sm">
+            查看工单
+        </button>
+        <button onclick="closeNotice()" class="text-white ml-2">×</button>
+    </div>
+
+    <!-- 顶部导航栏 -->
+    <header class="h-12 bg-dark-2 border-b border-dark-3 flex items-center justify-between px-4">
+        <div class="flex items-center">
+            <h1 class="text-lg font-medium mr-8">在线水力模型系统</h1>
+            <nav class="flex space-x-1">
+                <button id="nav-pipe" onclick="showPage('pipe-page')" class="px-4 py-2 bg-primary rounded text-sm">爆管处置</button>
+                <button id="nav-valve" onclick="showPage('valve-page')" class="px-4 py-2 hover:bg-dark-3 rounded text-sm">阀门管理</button>
+                <button class="px-4 py-2 hover:bg-dark-3 rounded text-sm">管网分析</button>
+                <button class="px-4 py-2 hover:bg-dark-3 rounded text-sm">系统管理</button>
+            </nav>
+        </div>
+        <div class="flex items-center space-x-4">
+            <span class="text-text-lighter text-sm">当前用户：张调度</span>
+            <button class="text-text-lighter hover:text-text-light">
+                <i class="fa fa-user-circle-o"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- ============================================== -->
+    <!-- 页面1：爆管处置方案页面 -->
+    <!-- ============================================== -->
+    <div id="pipe-page" class="page h-[calc(100vh-48px)] flex active">
+        <!-- 左侧爆管信息面板 -->
+        <div class="w-80 bg-dark-2 border-r border-dark-3 flex flex-col">
+            <!-- 爆管基础信息 -->
+            <div class="p-4 border-b border-dark-3">
+                <h3 class="font-medium mb-3">爆管基础信息</h3>
+                <div class="space-y-2 text-sm">
+                    <div class="flex justify-between">
+                        <span class="text-text-lighter">爆管编号</span>
+                        <span>BG20260415001</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-text-lighter">发生位置</span>
+                        <span>武原街道百尺北路</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-text-lighter">影响区域</span>
+                        <span>3个小区</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-text-lighter">上报时间</span>
+                        <span>2026-04-15 15:30</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 关阀阀门列表 -->
+            <div class="flex-1 overflow-y-auto scrollbar-thin p-4">
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="font-medium">关阀阀门列表（8个）</h3>
+                    <!-- 辅助生成工单按钮 -->
+                    <button id="quick-create-task" onclick="showCreateTaskModal()" class="text-xs bg-emergency/20 hover:bg-emergency/30 text-emergency px-2 py-1 rounded hidden">
+                        <i class="fa fa-plus-circle mr-1"></i>生成工单
+                    </button>
+                </div>
+                <div class="space-y-2">
+                    <div class="bg-dark-3 rounded p-2 text-sm">
+                        <div class="flex justify-between">
+                            <span>EC9E.A17D</span>
+                            <span class="text-primary">模型内</span>
+                        </div>
+                        <p class="text-text-lighter text-xs mt-1">DN800 | 百尺北路</p>
+                    </div>
+                    <div class="bg-dark-3 rounded p-2 text-sm">
+                        <div class="flex justify-between">
+                            <span>D89F.9C8B</span>
+                            <span class="text-primary">模型内</span>
+                        </div>
+                        <p class="text-text-lighter text-xs mt-1">DN800 | 百尺北路</p>
+                    </div>
+                    <div class="bg-dark-3 rounded p-2 text-sm">
+                        <div class="flex justify-between">
+                            <span>0638.0B0B</span>
+                            <span class="text-primary">模型内</span>
+                        </div>
+                        <p class="text-text-lighter text-xs mt-1">DN800 | 水厂附近</p>
+                    </div>
+                    <div class="bg-dark-3 rounded p-2 text-sm">
+                        <div class="flex justify-between">
+                            <span>E887.CA19</span>
+                            <span class="text-warning">模型外</span>
+                        </div>
+                        <p class="text-text-lighter text-xs mt-1">DN80 | 城北路</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 底部操作按钮区 -->
+            <div class="p-4 border-t border-dark-3 space-y-2">
+                <button id="simulate-btn" onclick="finishSimulate()" class="w-full bg-primary hover:bg-primary/90 py-2 rounded text-sm">
+                    模拟计算
+                </button>
+                <button class="w-full bg-dark-3 hover:bg-dark-4 py-2 rounded text-sm">
+                    保存方案
+                </button>
+                <!-- 核心：生成关阀工单按钮（默认禁用，计算后启用） -->
+                <button id="create-task-btn" onclick="showCreateTaskModal()" disabled class="w-full bg-emergency hover:bg-emergency/90 py-2 rounded text-sm opacity-50 cursor-not-allowed">
+                    <i class="fa fa-list-alt mr-1"></i>生成关阀工单
+                </button>
+                <!-- 查看工单按钮（生成后显示） -->
+                <button id="view-task-btn" onclick="jumpToTask()" class="w-full bg-success hover:bg-success/90 py-2 rounded text-sm hidden">
+                    <i class="fa fa-eye mr-1"></i>查看已生成工单
+                </button>
+            </div>
+        </div>
+
+        <!-- 右侧地图区域 -->
+        <div class="flex-1 relative">
+            <img src="https://picsum.photos/1920/1080?random=10" alt="爆管管网地图" class="w-full h-full object-cover">
+        </div>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- 页面2：阀门管理页面（复用之前版本） -->
+    <!-- ============================================== -->
+    <div id="valve-page" class="page h-[calc(100vh-48px)] flex hidden">
+        <!-- 左侧阀门列表 -->
+        <aside class="w-72 bg-dark-2 border-r border-dark-3 flex flex-col">
+            <div class="p-3 border-b border-dark-3">
+                <div class="relative">
+                    <input type="text" placeholder="搜索阀门ID" class="w-full bg-dark-3 border border-dark-4 rounded px-3 py-2 text-sm text-text-light">
+                    <i class="fa fa-search absolute right-3 top-1/2 -translate-y-1/2 text-text-lighter"></i>
+                </div>
+            </div>
+            <div class="flex-1 overflow-y-auto scrollbar-thin p-2">
+                <div class="text-sm text-text-lighter mb-2">阀门列表</div>
+            </div>
+        </aside>
+
+        <!-- 中间地图 -->
+        <main class="flex-1 relative">
+            <div class="absolute top-4 right-4 z-10 flex items-center space-x-2">
+                <button onclick="toggleRightSidebar()" class="bg-primary hover:bg-primary/90 w-10 h-10 rounded flex items-center justify-center relative">
+                    <i class="fa fa-list-ul"></i>
+                    <span class="absolute -top-1 -right-1 bg-emergency text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">1</span>
+                </button>
+            </div>
+            <img src="https://picsum.photos/1920/1080?random=11" alt="管网地图" class="w-full h-full object-cover">
+        </main>
+
+        <!-- 右侧工单侧边栏 -->
+        <aside id="right-sidebar" class="w-96 bg-dark-2 sidebar-shadow flex flex-col transform translate-x-full transition-transform duration-300">
+            <div class="h-12 border-b border-dark-3 flex items-center justify-between px-4">
+                <h2 class="font-medium">工单管理</h2>
+                <button onclick="toggleRightSidebar()" class="text-text-lighter hover:text-text-light">
+                    <i class="fa fa-times"></i>
+                </button>
+            </div>
+            <div class="flex border-b border-dark-3">
+                <button onclick="switchTab('pending')" class="flex-1 py-2 text-sm tab-active" id="tab-pending">待处理</button>
+                <button onclick="switchTab('history')" class="flex-1 py-2 text-sm text-text-lighter">历史工单</button>
+                <button onclick="switchTab('valve')" class="flex-1 py-2 text-sm text-text-lighter">阀门详情</button>
+            </div>
+
+            <!-- 待处理工单 -->
+            <div id="content-pending" class="flex-1 overflow-y-auto scrollbar-thin p-3">
+                <!-- 爆管生成的紧急工单 -->
+                <div class="bg-dark-3 rounded-lg p-3 border-l-4 border-emergency cursor-pointer" onclick="showTaskDetail()">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <span class="font-medium">GD20260415001</span>
+                            <span class="ml-2 bg-emergency text-white text-xs px-2 py-0.5 rounded">紧急</span>
+                        </div>
+                        <span class="text-emergency text-sm">待审核</span>
+                    </div>
+                    <p class="text-text-lighter text-sm mb-1">爆管应急生成 · 关阀操作</p>
+                    <p class="text-text-lighter text-sm mb-1">关联爆管：BG20260415001</p>
+                    <p class="text-text-lighter text-xs">阀门数量：8个</p>
+                </div>
+            </div>
+
+            <!-- 工单详情 -->
+            <div id="content-task-detail" class="flex-1 overflow-y-auto scrollbar-thin p-3 hidden">
+                <div class="bg-dark-3 rounded-lg p-4 mb-4">
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="font-medium">GD20260415001</h3>
+                        <span class="bg-emergency text-white text-xs px-2 py-0.5 rounded">紧急</span>
+                    </div>
+                    <div class="space-y-2 text-sm">
+                        <div class="flex">
+                            <span class="text-text-lighter w-20">工单类型：</span>
+                            <span>事前派单</span>
+                        </div>
+                        <div class="flex">
+                            <span class="text-text-lighter w-20">关联爆管：</span>
+                            <span onclick="backToPipe()" class="text-primary cursor-pointer">BG20260415001 点击查看</span>
+                        </div>
+                        <div class="flex">
+                            <span class="text-text-lighter w-20">执行人：</span>
+                            <span>李师傅</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex space-x-3">
+                    <button class="flex-1 bg-success hover:bg-success/90 py-2 rounded text-sm">审核通过</button>
+                    <button class="flex-1 bg-emergency hover:bg-emergency/90 py-2 rounded text-sm">驳回</button>
+                </div>
+            </div>
+
+            <div id="content-history" class="flex-1 hidden p-3"><span class="text-text-lighter text-sm">暂无数据</span></div>
+            <div id="content-valve" class="flex-1 hidden p-3"><span class="text-text-lighter text-sm">暂无数据</span></div>
+        </aside>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- 弹窗：生成爆管关阀工单 -->
+    <!-- ============================================== -->
+    <div id="task-modal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center hidden">
+        <div class="bg-dark-2 rounded-lg w-[550px] overflow-hidden">
+            <div class="border-b border-dark-3 p-4 flex justify-between items-center">
+                <h3 class="font-medium">生成爆管应急关阀工单</h3>
+                <button onclick="closeModal()" class="text-text-lighter hover:text-text-light">×</button>
+            </div>
+            <div class="p-4 space-y-4 text-sm">
+                <div class="bg-emergency/10 border border-emergency/30 rounded p-3 text-emergency text-xs">
+                    该工单为爆管应急生成，优先级为紧急，审核通过后立即推送至现场APP
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-text-lighter">关联爆管编号</span>
+                    <span>BG20260415001</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-text-lighter">工单编号</span>
+                    <span>GD20260415001</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-text-lighter">关阀数量</span>
+                    <span>8个</span>
+                </div>
+                <div>
+                    <span class="text-text-lighter block mb-2">指派执行人</span>
+                    <select class="w-full bg-dark-3 border border-dark-4 rounded px-3 py-2 text-sm">
+                        <option>李师傅</option>
+                        <option>王师傅</option>
+                    </select>
+                </div>
+            </div>
+            <div class="border-t border-dark-3 p-4 flex justify-end space-x-3">
+                <button onclick="closeModal()" class="px-4 py-2 bg-dark-4 rounded text-sm">取消</button>
+                <button onclick="createTaskSuccess()" class="px-4 py-2 bg-emergency rounded text-sm">确认生成工单</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 全局变量
+        let hasCreateTask = false;
+
+        // 页面切换
+        function showPage(pageId) {
+            document.querySelectorAll('.page').forEach(item => {
+                item.classList.remove('active', 'flex');
+                item.classList.add('hidden');
+            });
+            document.getElementById(pageId).classList.remove('hidden');
+            document.getElementById(pageId).classList.add('active', 'flex');
+            
+            // 导航高亮
+            if(pageId === 'pipe-page') {
+                document.getElementById('nav-pipe').classList.add('bg-primary');
+                document.getElementById('nav-valve').classList.remove('bg-primary');
+            } else {
+                document.getElementById('nav-pipe').classList.remove('bg-primary');
+                document.getElementById('nav-valve').classList.add('bg-primary');
+            }
+        }
+
+        // 1. 爆管页面：完成模拟计算，启用按钮
+        function finishSimulate() {
+            document.getElementById('create-task-btn').disabled = false;
+            document.getElementById('create-task-btn').classList.remove('opacity-50', 'cursor-not-allowed');
+            document.getElementById('quick-create-task').classList.remove('hidden');
+            alert('模拟计算完成，可生成关阀工单');
+        }
+
+        // 2. 打开生成工单弹窗
+        function showCreateTaskModal() {
+            if(hasCreateTask) {
+                alert('该爆管方案已生成工单，请勿重复创建');
+                return;
+            }
+            document.getElementById('task-modal').classList.remove('hidden');
+        }
+
+        // 关闭弹窗
+        function closeModal() {
+            document.getElementById('task-modal').classList.add('hidden');
+        }
+
+        // 3. 生成工单成功
+        function createTaskSuccess() {
+            hasCreateTask = true;
+            closeModal();
+            // 切换按钮状态
+            document.getElementById('create-task-btn').classList.add('hidden');
+            document.getElementById('view-task-btn').classList.remove('hidden');
+            document.getElementById('quick-create-task').classList.add('hidden');
+            // 显示全局通知
+            document.getElementById('global-notice').classList.remove('hidden');
+            // 跳转阀门管理工单页面
+            setTimeout(() => {
+                jumpToTask();
+            }, 1000);
+        }
+
+        // 4. 跳转至阀门管理-工单详情
+        function jumpToTask() {
+            showPage('valve-page');
+            document.getElementById('right-sidebar').classList.remove('translate-x-full');
+            showTaskDetail();
+        }
+
+        // 5. 工单详情跳转回爆管方案
+        function backToPipe() {
+            showPage('pipe-page');
+        }
+
+        // 6. 右侧侧边栏切换
+        function toggleRightSidebar() {
+            const sidebar = document.getElementById('right-sidebar');
+            sidebar.classList.toggle('translate-x-full');
+        }
+
+        // 7. 切换工单标签
+        function switchTab(tab) {
+            document.getElementById('content-pending').classList.add('hidden');
+            document.getElementById('content-history').classList.add('hidden');
+            document.getElementById('content-valve').classList.add('hidden');
+            document.getElementById('content-task-detail').classList.add('hidden');
+            document.getElementById('tab-pending').classList.remove('tab-active');
+            
+            document.getElementById('tab-' + tab).classList.add('tab-active');
+            document.getElementById('content-' + tab).classList.remove('hidden');
+        }
+
+        // 显示工单详情
+        function showTaskDetail() {
+            document.getElementById('content-pending').classList.add('hidden');
+            document.getElementById('content-task-detail').classList.remove('hidden');
+        }
+
+        // 关闭全局通知
+        function closeNotice() {
+            document.getElementById('global-notice').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>

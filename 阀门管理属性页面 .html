@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>阀门详情</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Microsoft YaHei", sans-serif;
+        }
+
+        body {
+            background-color: #0a1428;
+            color: #ffffff;
+            line-height: 1.6;
+            /* 给body设置最小高度，避免底部按钮遮挡内容 */
+            min-height: 100vh;
+            padding-bottom: 80px;
+            position: relative;
+        }
+
+        .container {
+            max-width: 750px;
+            margin: 0 auto;
+            background-color: #0a1428;
+        }
+
+        /* 顶部标签栏 */
+        .tab-bar {
+            display: flex;
+            background-color: #0f1a30;
+            border-bottom: 1px solid #1a2a4a;
+            position: sticky;
+            top: 0;
+            z-index: 90;
+        }
+
+        .tab-item {
+            flex: 1;
+            text-align: center;
+            padding: 12px 0;
+            font-size: 20px;
+            color: #8899aa;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .tab-item.active {
+            color: #ffffff;
+            background-color: #142340;
+            border-bottom: 2px solid #409eff;
+        }
+
+        /* 地图预览区 - 固定不动（核心调整：缩小占比） */
+        .map-preview {
+            position: sticky;
+            top: 62px; /* 对应tab-bar的高度 */
+            z-index: 80;
+            padding: 15px;
+            background-color: #0a1428;
+            /* 新增：限制地图最大宽度和高度 */
+            max-width: 500px;   /* 地图最大宽度 */
+            margin: 0 auto;     /* 居中显示 */
+        }
+
+        .map-img {
+            width: 100%;
+            border-radius: 4px;
+            /* 新增：限制图片高度，缩小显示占比 */
+            max-height: 180px;  /* 原高度约300px，调整为180px */
+            object-fit: cover;  /* 保持图片比例 */
+        }
+
+        .arrow-btn {
+            position: absolute;
+            right: 25px; /* 调整箭头位置适配缩小的地图 */
+            top: 50%;
+            transform: translateY(-50%);
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: #409eff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+            font-size: 24px;
+            cursor: pointer;
+        }
+
+        /* 可滚动的内容区域（适配地图高度调整） */
+        .scroll-content {
+            max-height: calc(100vh - 180px); /* 适配地图高度调整，增加可滚动区域 */
+            overflow-y: auto;
+            /* 滚动条美化 */
+            scrollbar-width: thin;
+            scrollbar-color: #409eff #142340;
+        }
+
+        .scroll-content::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .scroll-content::-webkit-scrollbar-track {
+            background: #142340;
+            border-radius: 3px;
+        }
+
+        .scroll-content::-webkit-scrollbar-thumb {
+            background: #409eff;
+            border-radius: 3px;
+        }
+
+        /* 通用模块样式 */
+        .section {
+            margin: 10px 15px;
+            background-color: #0f1a30;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            border-bottom: 1px solid #1a2a4a;
+        }
+
+        .section-dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background-color: #409eff;
+            margin-right: 10px;
+            box-shadow: 0 0 8px #409eff;
+        }
+
+        .section-title {
+            font-size: 22px;
+            color: #ffffff;
+            flex: 1;
+        }
+
+        .section-link {
+            font-size: 18px;
+            color: #8899aa;
+            cursor: pointer;
+        }
+
+        .info-list {
+            padding: 15px;
+        }
+
+        .info-item {
+            display: flex;
+            padding: 10px 0; /* 调整行高更贴合截图 */
+            font-size: 19px; /* 优化字体大小 */
+        }
+
+        .info-label {
+            width: 100px; /* 调整标签宽度适配截图 */
+            color: #ffffff;
+            font-weight: bold;
+        }
+
+        .info-value {
+            flex: 1;
+            color: #409eff;
+        }
+
+        .info-value.highlight {
+            font-size: 22px;
+            font-weight: bold;
+        }
+
+        /* 操作记录模块样式 */
+        .record-list {
+            padding: 15px;
+        }
+
+        .record-item {
+            padding: 12px 10px;
+            margin-bottom: 10px;
+            background-color: #142340;
+            border-radius: 6px;
+            border-left: 4px solid #409eff;
+            font-size: 18px;
+        }
+
+        .record-item:last-child {
+            margin-bottom: 0;
+        }
+
+        /* 时间+内容同行样式 */
+        .record-time-content {
+            color: #409eff;
+            margin-bottom: 8px;
+        }
+
+        /* 操作人行样式（保留字段名） */
+        .record-operator {
+            display: flex;
+            color: #ffffff;
+        }
+
+        .operator-label {
+            width: 80px;
+        }
+
+        .operator-content {
+            flex: 1;
+            color: #409eff;
+        }
+
+        .detail-btn {
+            padding: 6px 15px;
+            background-color: #409eff;
+            border: none;
+            border-radius: 4px;
+            color: #ffffff;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        /* 备注/维修记录通用样式 */
+        .remark-list, .repair-list {
+            padding: 15px;
+        }
+
+        .remark-item, .repair-item {
+            padding: 15px 12px;
+            margin-bottom: 10px;
+            background-color: #142340;
+            border-radius: 6px;
+            border-left: 4px solid #409eff;
+            font-size: 18px;
+        }
+
+        .remark-item:last-child, .repair-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .remark-content, .repair-content {
+            color: #409eff;
+            line-height: 1.8;
+            margin-bottom: 12px;
+        }
+
+        .remark-footer, .repair-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #ffffff;
+            font-size: 17px;
+        }
+
+        .remark-time, .repair-time {
+            color: #409eff;
+        }
+
+        .remark-person, .repair-person {
+            color: #409eff;
+        }
+
+        /* 底部固定按钮 */
+        .fixed-btn {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            max-width: 750px;
+            margin: 0 auto;
+            padding: 15px;
+            background-color: #0a1428;
+            border-top: 1px solid #1a2a4a;
+            z-index: 100;
+        }
+
+        .create-task-btn {
+            display: block;
+            width: 100%;
+            padding: 15px 0;
+            background-color: #409eff;
+            border: none;
+            border-radius: 8px;
+            color: #ffffff;
+            font-size: 22px;
+            font-weight: bold;
+            cursor: pointer;
+            text-align: center;
+        }
+
+        .create-task-btn:hover {
+            background-color: #3088e0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 顶部标签栏 -->
+        <div class="tab-bar">
+            <div class="tab-item">所在地图</div>
+            <div class="tab-item">阀门俯拍图</div>
+            <div class="tab-item active">周围环境图</div>
+        </div>
+
+        <!-- 地图预览 - 固定不动 -->
+        <div class="map-preview">
+            <img src="https://picsum.photos/600/300" alt="管网地图" class="map-img">
+            <div class="arrow-btn">></div>
+        </div>
+
+        <!-- 可滚动的内容区域 -->
+        <div class="scroll-content">
+            <!-- 阀门信息模块 -->
+            <div class="section">
+                <div class="section-header">
+                    <div class="section-dot"></div>
+                    <div class="section-title">阀门信息</div>
+                    <div class="section-link">查看详细信息</div>
+                </div>
+                <div class="info-list">
+                    <div class="info-item">
+                        <div class="info-label">ID</div>
+                        <div class="info-value">E887....CA10</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">安装位置</div>
+                        <div class="info-value">-</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">类型</div>
+                        <div class="info-value">闸阀</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">口径</div>
+                        <div class="info-value highlight">DN 800</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">启闭状态</div>
+                        <div class="info-value highlight">开启</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">设备状态</div>
+                        <div class="info-value">正常</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">X,Y</div>
+                        <div class="info-value">588077.8, 3378955.6</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 操作记录模块 -->
+            <div class="section">
+                <div class="section-header">
+                    <div class="section-dot"></div>
+                    <div class="section-title">操作记录</div>
+                    <button class="detail-btn">详情</button>
+                </div>
+                <div class="record-list">
+                    <!-- 第一条记录（时间最近） -->
+                    <div class="record-item">
+                        <!-- 任务ID（只显示内容） -->
+                        <div class="record-time-content">RW20260103001</div>
+                        <!-- 时间+操作内容（同行，只显示内容） -->
+                        <div class="record-time-content">2026.01.03 12:01 关阀操作</div>
+                        <!-- 操作人（保留字段名） -->
+                        <div class="record-operator">
+                            <div class="operator-label">操作人</div>
+                            <div class="operator-content">王师傅</div>
+                        </div>
+                    </div>
+                    <!-- 第二条记录（时间稍远） -->
+                    <div class="record-item">
+                        <!-- 任务ID（只显示内容） -->
+                        <div class="record-time-content">RW20260102002</div>
+                        <!-- 时间+操作内容（同行，只显示内容） -->
+                        <div class="record-time-content">2026.01.02 09:45 开阀操作</div>
+                        <!-- 操作人（保留字段名） -->
+                        <div class="record-operator">
+                            <div class="operator-label">操作人</div>
+                            <div class="operator-content">李师傅</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 维修记录模块 -->
+            <div class="section">
+                <div class="section-header">
+                    <div class="section-dot"></div>
+                    <div class="section-title">维修记录</div>
+                    <button class="detail-btn">详情</button>
+                </div>
+                <div class="repair-list">
+                    <!-- 第一条维修记录（时间最近） -->
+                    <div class="repair-item">
+                        <div class="repair-content">
+                            更换阀门损坏的执行器齿轮组，重新校准阀门开度传感器，测试启闭精度达到±1°，符合运行标准。
+                        </div>
+                        <div class="repair-footer">
+                            <div class="repair-time">2026.01.08 16:20</div>
+                            <div class="repair-person">维修人：王师傅</div>
+                        </div>
+                    </div>
+                    <!-- 第二条维修记录（时间稍远） -->
+                    <div class="repair-item">
+                        <div class="repair-content">
+                            拆解阀门阀盖，更换老化的填料函密封组件，重新紧固螺栓并做水压测试，无渗漏现象。
+                        </div>
+                        <div class="repair-footer">
+                            <div class="repair-time">2026.01.05 10:10</div>
+                            <div class="repair-person">维修人：王师傅</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 备注模块 -->
+            <div class="section">
+                <div class="section-header">
+                    <div class="section-dot"></div>
+                    <div class="section-title">备注</div>
+                    <button class="detail-btn">详情</button>
+                </div>
+                <div class="remark-list">
+                    <!-- 第一条备注（时间最近） -->
+                    <div class="remark-item">
+                        <div class="remark-content">
+                            现场巡检发现阀门密封垫有轻微渗漏现象，已临时处理并记录。后续需安排更换密封垫，确保阀门运行安全。
+                        </div>
+                        <div class="remark-footer">
+                            <div class="remark-time">2026.01.12 14:30</div>
+                            <div class="remark-person">记录人：赵巡检</div>
+                        </div>
+                    </div>
+                    <!-- 第二条备注（时间稍远） -->
+                    <div class="remark-item">
+                        <div class="remark-content">
+                            对阀门进行常规维护保养，清理阀杆积垢并加注润滑油，测试启闭功能正常，无卡顿、异响等异常情况。
+                        </div>
+                        <div class="remark-footer">
+                            <div class="remark-time">2026.01.10 09:15</div>
+                            <div class="remark-person">记录人：赵巡检</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 底部固定的创建操作任务按钮 -->
+        <div class="fixed-btn">
+            <button class="create-task-btn">创建操作任务</button>
+        </div>
+    </div>
+</body>
+</html>
